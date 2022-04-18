@@ -9,6 +9,9 @@ import { Loading } from '../components/Loading';
 import { Error } from '../components/Error';
 
 export default function Home(): JSX.Element {
+  // function fetchImages({pageParam = null}) {
+  //   return api.get("/api/images?cursor="+pageParam)
+  // }
   const {
     data,
     isLoading,
@@ -18,6 +21,7 @@ export default function Home(): JSX.Element {
     hasNextPage,
   } = useInfiniteQuery(
     'images',
+
     // TODO AXIOS REQUEST WITH PARAM
     ,
     // TODO GET AND RETURN NEXT PAGE PARAM
