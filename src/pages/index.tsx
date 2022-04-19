@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/explicit-function-return-type */
 import { Button, Box } from '@chakra-ui/react';
 import { useMemo } from 'react';
 import { useInfiniteQuery } from 'react-query';
@@ -9,9 +10,9 @@ import { Loading } from '../components/Loading';
 import { Error } from '../components/Error';
 
 export default function Home(): JSX.Element {
-  // function fetchImages({pageParam = null}) {
-  //   return api.get("/api/images?cursor="+pageParam)
-  // }
+  function fetchPage({ pageParam = null }) {
+    return api.get(`/api/images?after=${pageParam}`);
+  }
   const {
     data,
     isLoading,
@@ -21,9 +22,9 @@ export default function Home(): JSX.Element {
     hasNextPage,
   } = useInfiniteQuery(
     'images',
-
+    ({ pageParam = null }) => fetchPage(pageParam),
     // TODO AXIOS REQUEST WITH PARAM
-    ,
+   ,
     // TODO GET AND RETURN NEXT PAGE PARAM
   );
 
