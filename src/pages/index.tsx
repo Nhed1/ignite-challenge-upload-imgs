@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
 import { Button, Box } from '@chakra-ui/react';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useInfiniteQuery } from 'react-query';
 
 import { Header } from '../components/Header';
@@ -22,11 +22,19 @@ export default function Home(): JSX.Element {
     hasNextPage,
   } = useInfiniteQuery(
     'images',
-    ({ pageParam = null }) => fetchPage(pageParam),
-    // TODO AXIOS REQUEST WITH PARAM
-   ,
-    // TODO GET AND RETURN NEXT PAGE PARAM
+    async ({ pageParam = null }) => {
+      const page = await api.get(`/api/images?after=${pageParam}`);
+      return page;
+    },
+    {
+      getNextPageParam: page => {
+        if (page.hasNextPage) return page.after;
+        return null;
+      },
+    }
   );
+  // TODO AXIOS REQUEST WITH PARAM
+  // TODO GET AND RETURN NEXT PAGE PARAM
 
   const formattedData = useMemo(() => {
     // TODO FORMAT AND FLAT DATA ARRAY
