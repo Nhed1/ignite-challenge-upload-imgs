@@ -11,19 +11,43 @@ interface FormAddImageProps {
   closeModal: () => void;
 }
 
+interface INewImage {
+  url: string;
+  title: string;
+  description: string;
+}
+
 export function FormAddImage({ closeModal }: FormAddImageProps): JSX.Element {
   const [imageUrl, setImageUrl] = useState('');
   const [localImageUrl, setLocalImageUrl] = useState('');
   const toast = useToast();
 
+  const regexImages =
+    /(?:([^:/?#]+):)?(?:([^/?#]*))?([^?#](?:jpeg|gif|png))(?:\?([^#]*))?(?:#(.*))?/g;
+
   const formValidations = {
     image: {
+      required: 'Arquivo obrigatório',
+      validate: {
+        lessThan10MB: fileList =>
+          fileList[0].size < 10000000 || 'O arquivo deve ser menor que 10MB',
+        acceptedFormats: fileList =>
+          regexImages.test(fileList[0].type) ||
+          'Somente são aceitos arquivos PNG, JPEG e GIF',
+      },
       // TODO REQUIRED, LESS THAN 10 MB AND ACCEPTED FORMATS VALIDATIONS
     },
     title: {
+      required: 'Título obrigatório',
+      maxLength: { value: 20, message: 'Máximo de 20 caracteres' },
+      minLength: { value: 2, message: 'Mínimo de 2 caracteres' },
       // TODO REQUIRED, MIN AND MAX LENGTH VALIDATIONS
     },
     description: {
+      required: 'Descrição obrigatória',
+      maxLength: { value: 65, message: 'Máximo de 65 caracteres' },
+      minLength: { value: 2, message: 'Mínimo de 2 caracteres' },
+
       // TODO REQUIRED, MAX LENGTH VALIDATIONS
     },
   };
@@ -31,29 +55,50 @@ export function FormAddImage({ closeModal }: FormAddImageProps): JSX.Element {
   const queryClient = useQueryClient();
   const mutation = useMutation(
     // TODO MUTATION API POST REQUEST,
+    async (imageData: INewImage) => {
+      await api.post('/api/images', {
+        ...imageData,
+        url: imageUrl,
+      });
+    },
     {
+      onSuccess: () => {
+        queryClient.invalidateQueries('images');
+      },
       // TODO ONSUCCESS MUTATION
     }
   );
 
-  const {
-    register,
-    handleSubmit,
-    reset,
-    formState,
-    setError,
-    trigger,
-  } = useForm();
+  const { register, handleSubmit, reset, formState, setError, trigger } =
+    useForm();
   const { errors } = formState;
 
-  const onSubmit = async (data: Record<string, unknown>): Promise<void> => {
+  const onSubmit = async (data: INewImage): Promise<void> => {
     try {
+      if (!imageUrl) {
+        toast({
+          title: 'Imagem não adicionada',
+          description:
+            'É preciso adicionar e aguardar o upload de uma imagem antes de realizar o cadastro.',
+        });
+        return;
+      }
+      await mutation.mutateAsync(data);
+
       // TODO SHOW ERROR TOAST IF IMAGE URL DOES NOT EXISTS
       // TODO EXECUTE ASYNC MUTATION
       // TODO SHOW SUCCESS TOAST
     } catch {
+      toast({
+        title: 'Falha no cadastro',
+        description: 'Ocorreu um erro ao tentar cadastrar a sua imagem.',
+      });
       // TODO SHOW ERROR TOAST IF SUBMIT FAILED
     } finally {
+      reset();
+      setImageUrl('');
+      setLocalImageUrl('');
+      closeModal();
       // TODO CLEAN FORM, STATES AND CLOSE MODAL
     }
   };
@@ -67,18 +112,25 @@ export function FormAddImage({ closeModal }: FormAddImageProps): JSX.Element {
           setLocalImageUrl={setLocalImageUrl}
           setError={setError}
           trigger={trigger}
+          {...register('image', formValidations.image)}
+          error={errors.image}
           // TODO SEND IMAGE ERRORS
           // TODO REGISTER IMAGE INPUT WITH VALIDATIONS
         />
 
         <TextInput
           placeholder="Título da imagem..."
+          {...register('title', formValidations.title)}
+          error={errors.title}
+
           // TODO SEND TITLE ERRORS
           // TODO REGISTER TITLE INPUT WITH VALIDATIONS
         />
 
         <TextInput
           placeholder="Descrição da imagem..."
+          {...register('description', formValidations.description)}
+          error={errors.description}
           // TODO SEND DESCRIPTION ERRORS
           // TODO REGISTER DESCRIPTION INPUT WITH VALIDATIONS
         />
